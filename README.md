@@ -40,9 +40,5 @@ This extension does not contribute any settings.
 
 Pull requests and suggestions are welcome!
 
-## License
-
-[MIT](LICENSE)
-
 ---
 **Enjoy fast folder navigation in VS Code!**
