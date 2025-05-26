@@ -68,8 +68,8 @@ export function activate(context: vscode.ExtensionContext) {
       const depth = folder.label.split('/').length;
       const indent = '  '.repeat(depth - 1);
       return {
-        label: `${indent}📁 ${folder.label.split('/').pop()}`,
-        description: folder.label,
+        label: folder.label.split('/').pop() || folder.label,
+        detail: folder.label,
         folder
       } as vscode.QuickPickItem & { folder: { label: string, uri: vscode.Uri } };
     });
