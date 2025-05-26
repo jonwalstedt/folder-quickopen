@@ -1,4 +1,5 @@
 import * as vscode from 'vscode';
+import { filter } from "fuzzaldrin-plus";
 import * as path from 'node:path';
 
 const exclude = [
@@ -67,20 +68,24 @@ export function activate(context: vscode.ExtensionContext) {
 				const folders = cachedFolders;
 
 				const quickPick = vscode.window.createQuickPick();
-				quickPick.items = folders.map((folder) => {
+				const allItems = folders.map((folder) => {
 					return {
 						label: folder.label.split("/").pop() || folder.label,
 						detail: folder.label,
-						alwaysShow: true, // ensures all matches are considered
+						description: folder.label,
+						alwaysShow: true,
 						folder,
+						// Use 'description' as a hidden copy for better fuzzy matching if needed
 					} as vscode.QuickPickItem & {
 						folder: { label: string; uri: vscode.Uri };
 					};
 				});
 				quickPick.placeholder = "Select a folder to focus in Explorer";
-				quickPick.matchOnDetail = true;
-				quickPick.ignoreFocusOut = true;
+				quickPick.onDidChangeValue((value) => {
+					quickPick.items = filter(allItems, value, { key: "description" });
+				});
 
+				quickPick.items = allItems;
 				quickPick.onDidAccept(async () => {
 					const selected = quickPick.selectedItems[0];
 					const folder = (
