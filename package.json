@@ -19,6 +19,16 @@
   "activationEvents": [
     "onCommand:folder-quickopen.open"
   ],
+  "configuration": {
+    "title": "Folder Quickopen",
+    "properties": {
+      "folderquickopen.onEnterCommand": {
+        "type": "string",
+        "default": "revealInExplorer",
+        "description": "VS Code command ID to run when a folder is selected (e.g. 'revealInExplorer' or 'vscode.openFolder')."
+      }
+    }
+  },
   "contributes": {
     "commands": [
       {

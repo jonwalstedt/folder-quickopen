@@ -53,45 +53,62 @@ export function activate(context: vscode.ExtensionContext) {
   );
 
   const disposable = vscode.commands.registerCommand('folder-quickopen.open', async () => {
-    await cacheReady;
-    const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
-    if (!workspaceFolder) {
-      vscode.window.showErrorMessage('No folder is open.');
-      return;
-    }
+    const config = vscode.workspace.getConfiguration("folderquickopen");
+				const commandToExecute =
+					config.get<string>("onEnterCommand") || "revealInExplorer";
+				await cacheReady;
+				const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+				if (!workspaceFolder) {
+					vscode.window.showErrorMessage("No folder is open.");
+					return;
+				}
 
-    const rootUri = workspaceFolder.uri;
-    const folders = cachedFolders;
+				const rootUri = workspaceFolder.uri;
+				const folders = cachedFolders;
 
-    const quickPick = vscode.window.createQuickPick();
-    quickPick.items = folders.map(folder => {
-      const depth = folder.label.split('/').length;
-      const indent = '  '.repeat(depth - 1);
-      return {
-        label: folder.label.split('/').pop() || folder.label,
-        detail: folder.label,
-        folder
-      } as vscode.QuickPickItem & { folder: { label: string, uri: vscode.Uri } };
-    });
-    quickPick.placeholder = 'Select a folder to focus in Explorer';
-    quickPick.ignoreFocusOut = true;
+				const quickPick = vscode.window.createQuickPick();
+				quickPick.items = folders.map((folder) => {
+					return {
+						label: folder.label.split("/").pop() || folder.label,
+						detail: folder.label,
+						alwaysShow: true, // ensures all matches are considered
+						folder,
+					} as vscode.QuickPickItem & {
+						folder: { label: string; uri: vscode.Uri };
+					};
+				});
+				quickPick.placeholder = "Select a folder to focus in Explorer";
+				quickPick.matchOnDetail = true;
+				quickPick.ignoreFocusOut = true;
 
-    quickPick.onDidAccept(async () => {
-      const selected = quickPick.selectedItems[0];
-      const folder = (selected as typeof quickPick.items[0] & { folder: { label: string, uri: vscode.Uri } })?.folder;
-      if (folder) {
-        try {
-          await vscode.commands.executeCommand('revealInExplorer', folder.uri);
-        } catch (err) {
-          vscode.window.showErrorMessage(`Could not access "${folder.label}": ${err}`);
-        }
+				quickPick.onDidAccept(async () => {
+					const selected = quickPick.selectedItems[0];
+					const folder = (
+						selected as (typeof quickPick.items)[0] & {
+							folder: { label: string; uri: vscode.Uri };
+						}
+					)?.folder;
+					if (folder) {
+						try {
+							const arg =
+								typeof commandToExecute === "string" &&
+								commandToExecute.startsWith("vsnetrw.")
+									? folder.uri.fsPath
+									: folder.uri;
 
-        quickPick.hide();
-      }
-    });
+							await vscode.commands.executeCommand(commandToExecute, arg);
+						} catch (err) {
+							vscode.window.showErrorMessage(
+								`Could not access "${folder.label}": ${err}`,
+							);
+						}
 
-    quickPick.onDidHide(() => quickPick.dispose());
-    quickPick.show();
+						quickPick.hide();
+					}
+				});
+
+				quickPick.onDidHide(() => quickPick.dispose());
+				quickPick.show();
   });
 
   context.subscriptions.push(disposable);
